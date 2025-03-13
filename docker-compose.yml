@@ -1,0 +1,51 @@
+
+services:
+  neo4j:
+    image: neo4j:latest
+    container_name: casila_db
+    restart: always
+    environment:
+      - NEO4J_AUTH=${NEO4J_USER}/${NEO4J_PASSWORD}
+    ports:
+      - "6969:7474"  
+      - "4040:7687"  
+    volumes:
+      - neo4j_data:/data
+    networks:
+      - app_network
+
+  backend:
+    build: ./backend
+    container_name: express_backend
+    restart: always
+    depends_on:
+      - neo4j
+    env_file:
+      - .env  # Load all environment variables from .env file
+    networks:
+      - app_network
+    ports:
+      - "${EXPRESS_PORT}:3000"
+
+  postgres:
+    image: postgres:latest
+    container_name: etl_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: etl_database
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+
+volumes:
+  neo4j_data:
+  pg_data:
+networks:
+  app_network:
+    driver: bridge
